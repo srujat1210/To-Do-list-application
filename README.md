@@ -11,7 +11,8 @@ A simple to-do list app using **MongoDB, Express.js, and Node.js**.
 - **Database:** MongoDB  
 - **Frontend:** EJS, HTML, CSS  
 ## 🔧 Setup  
-1. **Install dependencies**
+1. **Clone the repo**
+2. **Install dependencies**
    ```bash
      npm install
 3. **Start MongoDB**
