@@ -1,0 +1,52 @@
+function editBook(bookId) {
+    const rows = document.querySelectorAll("#booksTable tbody tr"); // Select all rows
+    let bookRow = null;
+
+    // Iterate through each row and find the row with the matching bookId
+    rows.forEach(row => {
+        const bookCell = row.querySelector("td:first-child"); // The first column contains the book_id
+        if (bookCell && parseInt(bookCell.textContent.trim()) === bookId) {
+            bookRow = row; // Store the matching row
+        }
+    });
+
+    if (bookRow) {
+        // If the row is found, get the book data from the row
+        const bookName = bookRow.querySelector('td:nth-child(2)').textContent;  // Get book name from 2nd column
+        const author = bookRow.querySelector('td:nth-child(3)').textContent;    // Get author from 3rd column
+
+        // Populate the form with the existing data
+        document.getElementById('book_id').value = bookId;
+        document.getElementById('book_name').value = bookName;
+        document.getElementById('author').value = author;
+
+        // Update form submission logic to handle update action
+        addBookForm.removeEventListener('submit', addBook); // Remove existing submit event for adding books
+        addBookForm.addEventListener('submit', function updateBook(e) {
+            e.preventDefault();
+            const updatedData = {
+                book_name: document.getElementById('book_name').value,
+                author: document.getElementById('author').value
+            };
+
+            fetch(`http://localhost:5000/books/${bookId}`, {
+                method: 'PUT',
+                headers: {
+                    'Content-Type': 'application/json'
+                },
+                body: JSON.stringify(updatedData)
+            })
+                .then(response => response.json())
+                .then(() => {
+                    fetchBooks(); // Refresh the book list
+                    addBookForm.reset();
+                    // Reset form listener to add new books
+                    addBookForm.removeEventListener('submit', updateBook);
+                    addBookForm.addEventListener('submit', addBook);
+                })
+                .catch(err => console.error('Error updating book:', err));
+        });
+    } else {
+        console.error('Book row not found for edit');
+    }
+}
