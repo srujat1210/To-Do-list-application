@@ -1,0 +1,102 @@
+document.addEventListener('DOMContentLoaded', () => {
+    const booksTable = document.querySelector('#booksTable tbody');
+    const addBookForm = document.getElementById('addBookForm');
+    const apiUrl = 'http://localhost:5000/books';
+
+    // Fetch all books and display them
+    function fetchBooks() {
+        fetch(apiUrl)
+            .then(response => response.json())
+            .then(books => {
+                booksTable.innerHTML = '';
+                books.forEach(book => {
+                    const row = document.createElement('tr');
+                    row.innerHTML = `
+                        <td>${book.book_id}</td>
+                        <td>${book.book_name}</td>
+                        <td>${book.author}</td>
+                        <td>
+                            <button class="edit" onclick="editBook(${book.book_id})">Edit</button>
+                            <button class="delete" onclick="deleteBook(${book.book_id})">Delete</button>
+                        </td>
+                    `;
+                    booksTable.appendChild(row);
+                });
+            })
+            .catch(err => console.error('Error fetching books:', err));
+    }
+
+    // Handle form submission to add a new book
+    addBookForm.addEventListener('submit', (e) => {
+        e.preventDefault();
+        
+        const bookData = {
+            book_id: parseInt(document.getElementById('book_id').value),
+            book_name: document.getElementById('book_name').value,
+            author: document.getElementById('author').value
+        };
+
+        fetch(apiUrl, {
+            method: 'POST',
+            headers: {
+                'Content-Type': 'application/json'
+            },
+            body: JSON.stringify(bookData)
+        })
+            .then(response => response.json())
+            .then(() => {
+                fetchBooks();
+                addBookForm.reset();
+            })
+            .catch(err => console.error('Error adding book:', err));
+    });
+
+    // Delete a book
+    function deleteBook(bookId) {
+        fetch(`${apiUrl}/${bookId}`, {
+            method: 'DELETE',
+        })
+            .then(() => fetchBooks())
+            .catch(err => console.error('Error deleting book:', err));
+    }
+
+    // Edit a book
+    function editBook(bookId) {
+        const bookRow = document.querySelector(`#booksTable tr td:first-child:contains(${bookId})`).parentElement;
+        const bookName = bookRow.querySelector('td:nth-child(2)').textContent;
+        const author = bookRow.querySelector('td:nth-child(3)').textContent;
+
+        document.getElementById('book_id').value = bookId;
+        document.getElementById('book_name').value = bookName;
+        document.getElementById('author').value = author;
+
+        // Update form to handle update action
+        addBookForm.removeEventListener('submit', addBook);
+        addBookForm.addEventListener('submit', function updateBook(e) {
+            e.preventDefault();
+            const updatedData = {
+                book_name: document.getElementById('book_name').value,
+                author: document.getElementById('author').value
+            };
+
+            fetch(`${apiUrl}/${bookId}`, {
+                method: 'PUT',
+                headers: {
+                    'Content-Type': 'application/json'
+                },
+                body: JSON.stringify(updatedData)
+            })
+                .then(response => response.json())
+                .then(() => {
+                    fetchBooks();
+                    addBookForm.reset();
+                    addBookForm.removeEventListener('submit', updateBook);
+                    addBookForm.addEventListener('submit', addBook);
+                })
+                .catch(err => console.error('Error updating book:', err));
+        });
+    }
+
+    // Load books when the page loads
+    fetchBooks();
+});
